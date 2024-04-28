@@ -18,7 +18,10 @@ class SQLConnector:
         self.__connection = self.__make_connection
         self.__cursor = self.__make_cursor
 
-
+    
+    #####################################
+    # Setting the properties
+    #####################################
     @property
     def __make_connection(self):
         """Setting up the connection"""
@@ -35,20 +38,39 @@ class SQLConnector:
             return self.__connection.cursor()
         else:
             raise ConnectionNotSuccessful(ConnectionNotSuccessful.err_msg)
-    
+        
     #####################################
-    # Class methods
+    # Methods used withing class only
     #####################################
     @staticmethod
     def __list_converter(data):
+        """Converts the list of tuples to list"""
         arr = []
         for i in data:
             arr.append(i[0])
         return arr
     
+    # table checks
+    @staticmethod
+    def __check_name(table):
+        """Check the name of the table or column if valid or not"""
+        if (type(table) != str) or (table[0].isdigit()) or not(table.isalnum() or "$" in table or "_" in table):
+            raise IncorrectName(IncorrectName.err_msg)
+        else:
+            return True
+    
+    @staticmethod
+    def __check_columns(columns):
+        """Checks the repetition of columns"""
+        primary_key = False
+        for i in columns:
+            print(i)
+    
+    
     #####################################
     # Methods for the users
     #####################################
+    # Database mehtods
     def close(self):
         """Close the connections to database"""
         self.__cursor.close()
@@ -64,12 +86,30 @@ class SQLConnector:
         self.__cursor.execute(f"CREATE DATABASE IF NOT EXISTS {database}")
         self.__connection.commit()
         self.__cursor.execute(f"USE {database};")
+    
+    def delete_database(self, database):
+        """Deleting the database"""
+        if database in self.see_databases():
+            self.__cursor.execute(f"DROP DATABASE {database};")
+        else:
+            raise DeletingNonExistingDatabase(DeletingNonExistingDatabase.err_msg)
 
     def see_tables(self):
         """To view all the tables present in the database"""
         self.__cursor.execute("SHOW TABLES;")
         return self.__list_converter(self.__cursor.fetchall())
     
-    def delete_database(self, database):
-        """Deleting the database"""
-        self.__cursor.execute(f"DROP DATABASE {database};")
+    # Table methods
+    def check_table_exist(self, table):
+        self.__check_name(table)
+        if table in self.see_tables():
+            return True
+        else:
+            return False
+
+    def create_table(self, **kwargs):
+        if (self.check_table_exist(kwargs["table_name"])):
+            raise TableAlreadyExists(TableAlreadyExists.err_msg)
+        elif(self.__check_columns(kwargs["columns"])):
+            print('False')
+    
